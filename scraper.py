@@ -8,6 +8,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 import time
 
+# VARIABLES
 DRIVER_PATH = '/Users/aaronjiang/chromedriver'
 targetPage = 'https://www.reddit.com/r/wallstreetbets/comments/igw84c/daily_discussion_thread_for_august_26_2020/?sort=confidence'
 setDelay = 1
