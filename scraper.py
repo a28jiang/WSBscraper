@@ -1,3 +1,4 @@
+import csv
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -6,56 +7,87 @@ from selenium.common.exceptions import TimeoutException
 
 from selenium.webdriver.chrome.options import Options
 import time
+
 DRIVER_PATH = '/Users/aaronjiang/chromedriver'
+targetPage = 'https://www.reddit.com/r/wallstreetbets/comments/igw84c/daily_discussion_thread_for_august_26_2020/?sort=confidence'
+setDelay = 1
+
+# CLASS SELECTORS
+allClass = '_3tw__eCCe7j-epNCKGXUKk'
+
+userClass = 'f3THgbzMYccGW8vbqZBUH'
+delUserClass = '_1S45SPAIb30fsXtEcKPSdt'
+
+pointClass = '_3_GZIIN1xcMEC5AVuv4kfa'
+
+commentClass = '_1qeIAgB0cPwnLhDF9XSiJM'
+deletedComment = '_2Wu4MNMVl4bsJ9iVnQz0dF'
+richCommentClass = 'RichTextJSON-root'
+
+moreComments = '_3_mqV5-KnILOxl1TvgYtCk'
+firstComments = '._2JBsHFobuapzGwpHQjrDlD'
 
 
 options = Options()
 options.headless = True
+options.add_argument("--incognito")
+
 
 driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
-driver.get("https://www.reddit.com/r/wallstreetbets/comments/igw84c/daily_discussion_thread_for_august_26_2020/?sort=confidence")
-
-# https://www.reddit.com/r/wallstreetbets/search?q=discussion%20thread&restrict_sr=1&sort=new
-# initial loadAll button
-loadAll = driver.find_element_by_css_selector("._2JBsHFobuapzGwpHQjrDlD")
-loadAll.click()
-time.sleep(10)
-
-comments = driver.find_elements_by_class_name('_3tw__eCCe7j-epNCKGXUKk')
+driver.get(targetPage)
 
 
-for comment in comments:
-    print(comment.text+'\n')
+loadFirst = driver.find_element_by_css_selector(firstComments)
+loadFirst.click()
+time.sleep(5)
+
+timedOut = False
+iteration = 0
+
+while not timedOut:
+    try:
+        loadMore = driver.find_element_by_class_name(moreComments)
+        print("Sraping...")
+        loadMore.click()
+        iteration += 1
+
+        time.sleep(setDelay)
+
+    except:
+        timedOut = True
+        print("Comments timed out at " + str(iteration))
 
 
-# for i in range(0, amount):
-#     try:
-#         loadMoreButton = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
-#             driver.find_element_by_id('moreComments')))
-#         print(loadMoreButton.text)
-#         loadMoreButton.click()
-#         time.sleep(2)
-#     except Exception as e:
-#         print(e)
-#         break
+comments = driver.find_elements_by_class_name(allClass)
+
+with open('comments.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+
+    for comment in comments:
+
+        # DELETED COMMENT
+        try:
+            isDeleted = comment.find_element_by_class_name(deletedComment).text
+            print('DELETED COMMENT')
+
+        except:
+
+            try:
+                # REGULAR COMMENT
+                writer.writerow([comment.find_element_by_class_name(userClass).text, comment.find_element_by_class_name(
+                    pointClass).text, comment.find_element_by_class_name(commentClass).text])
+            except:
+
+                # RICH TEXT COMMENT
+                try:
+                    writer.writerow([comment.find_element_by_class_name(userClass).text, comment.find_element_by_class_name(
+                        pointClass).text, comment.find_element_by_class_name(richCommentClass).text])
+                    print('RICH COMMENT FOUND')
+
+                except:
+                    print("COULD NOT HANDLE")
 
 
-# try:
-#     loadAll = driver.findElement(By.class("_2JBsHFobuapzGwpHQjrDlD"))
-#     print('Successfully loaded more')
-# except NoSuchElementException:
-#     print('Load button not found')
+print("FINISHED")
 
-
-# print(loadAll)
-# clickLoadAll = driver.find_element_by_class_name(
-#     '_2JBsHFobuapzGwpHQjrDlD j9NixHqtN2j8SKHcdJ0om _2nelDm85zKKmuD94NequP0').click()
-
-
-# getMore = driver.find_element_by_class_name(
-#     '_2HYsucNpMdUpYlGBMviq8M _23013peWUhznY89KuYPZKv')
-# print(geMore)
-
-
-# print(driver.page_source)
 driver.quit()
